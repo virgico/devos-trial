@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DEVOS — Learning Operating System</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body,#root{height:100%;width:100%;overflow:hidden}
+body{background:#0a0a0b;color:#e5e5e5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+textarea{font-family:'SF Mono','Fira Code','Cascadia Code',monospace}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.14)}
+::selection{background:rgba(59,130,246,0.3)}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<script type="text/babel">
+const {useState,useEffect,useRef,useCallback}=React;
+
+const A={blue:"#3B82F6",purple:"#8B5CF6",green:"#10B981",amber:"#F59E0B",cyan:"#06B6D4",pink:"#EC4899",red:"#EF4444",orange:"#F97316"};
+const dim=c=>c+"18";
+
+const MODULES_DATA=[
+{id:"js",title:"JavaScript fundamentals",icon:"JS",color:A.amber,description:"The language of the web. Runs in every browser and on servers via Node.js. Used for interactive UIs, REST APIs, automation scripts, and virtually everything in the modern web stack — if you only learn one language, make it this.",lessons:[
+{id:"js1",title:"Variables & data types",content:"**Variables** are containers for storing data. JavaScript has three ways to declare them:\n\n`let` — use this for values that will change\n`const` — use this for values that won't change (most of the time, use this)\n`var` — the old way, avoid it\n\n```js\nconst name = \"Alex\";    // string\nlet age = 25;           // number\nconst isDevOS = true;   // boolean\nlet skills = [];        // array\nconst user = {};        // object\n```\n\n**Why does this matter?** Every program you'll ever write stores and manipulates data. Understanding types prevents bugs — like accidentally adding a string to a number (\"5\" + 3 = \"53\" not 8).",challenge:{prompt:"Declare a constant called `language` set to \"JavaScript\", and a variable called `year` set to 2026.",check:c=>c.includes("const")&&c.includes("language")&&c.includes("JavaScript")&&c.includes("let")&&c.includes("year")&&c.includes("2026"),hint:"Use const for language (it won't change) and let for year."}},
+{id:"js2",title:"Functions",content:"**Functions** are reusable blocks of code. Think of them as machines — you put something in, they do work, and give something back.\n\n```js\n// Function declaration\nfunction greet(name) {\n  return \"Hello, \" + name;\n}\n\n// Arrow function (modern, shorter)\nconst greet = (name) => {\n  return \"Hello, \" + name;\n};\n\n// Even shorter for one-liners\nconst greet = (name) => \"Hello, \" + name;\n```\n\n**Key concepts:**\n• **Parameters** — the inputs (name in the example)\n• **Return value** — what the function gives back\n• **Calling** — using the function: greet(\"Alex\")\n\n**Why arrow functions?** They're shorter, and they handle `this` differently (important later with React). Most modern code uses them.",challenge:{prompt:"Write an arrow function called `double` that takes a number and returns it multiplied by 2.",check:c=>c.includes("double")&&c.includes("=>")&&(c.includes("* 2")||c.includes("*2")),hint:"const double = (num) => num * 2;"}},
+{id:"js3",title:"Arrays & iteration",content:"**Arrays** are ordered lists. They're everywhere in web dev — user lists, shopping carts, API responses.\n\n```js\nconst fruits = [\"apple\", \"banana\", \"cherry\"];\nfruits[0]; // \"apple\" (zero-indexed!)\nfruits.length; // 3\n```\n\n**The big three methods** you'll use constantly:\n\n```js\n// .map() — transform every item\nconst upper = fruits.map(f => f.toUpperCase());\n\n// .filter() — keep items that pass a test\nconst long = fruits.filter(f => f.length > 5);\n\n// .find() — get the first match\nconst b = fruits.find(f => f.startsWith(\"b\"));\n```\n\nThese are **non-destructive** — they return new arrays and don't change the original. This matters a LOT in React.",challenge:{prompt:"Given `const nums = [1, 2, 3, 4, 5]`, use .filter() to create a new array called `evens` containing only the even numbers.",check:c=>c.includes("filter")&&(c.includes("% 2")||c.includes("% 2 === 0")),hint:"Use the modulo operator: n % 2 === 0 means the number is even."}},
+{id:"js4",title:"Objects & destructuring",content:"**Objects** store data as key-value pairs. They're how you model real-world things.\n\n```js\nconst user = {\n  name: \"Alex\",\n  age: 25,\n  skills: [\"JS\", \"React\"],\n  isActive: true\n};\n\nuser.name;        // \"Alex\"\nuser[\"age\"];      // 25\n```\n\n**Destructuring** lets you unpack values cleanly:\n\n```js\nconst { name, age, skills } = user;\n```\n\nYou'll see destructuring EVERYWHERE in React:\n```js\nfunction Profile({ name, age }) {\n  return <h1>{name}, {age}</h1>;\n}\n```",challenge:{prompt:"Create an object called `dev` with properties: name (string), level (number), and languages (array with at least 2 items). Then destructure `name` and `level` from it.",check:c=>c.includes("dev")&&c.includes("name")&&c.includes("level")&&c.includes("languages")&&(c.includes("const {")||c.includes("let {")),hint:"Create the object first, then use const { name, level } = dev;"}},
+{id:"js5",title:"Promises & async/await",content:"**Async code** handles things that take time — API calls, database queries, file reads.\n\n```js\nasync function getUsers() {\n  try {\n    const response = await fetch(\"/api/users\");\n    const data = await response.json();\n    console.log(data);\n  } catch (error) {\n    console.error(error);\n  }\n}\n```\n\n**Key ideas:**\n• `async` marks a function as asynchronous\n• `await` pauses until the promise resolves\n• `try/catch` handles errors\n\nEvery API call in your full-stack apps will use this pattern.",challenge:{prompt:"Write an async function called `fetchData` that uses await with fetch(\"/api/data\") and returns the parsed JSON.",check:c=>c.includes("async")&&c.includes("fetchData")&&c.includes("await")&&c.includes("fetch")&&c.includes("json"),hint:"async function fetchData() { const res = await fetch('/api/data'); return await res.json(); }"}},
+]},
+{id:"ts",title:"TypeScript essentials",icon:"TS",color:A.blue,description:"JavaScript with compile-time safety. The standard in any team codebase — React apps, Node APIs, and Angular projects. Catches type errors before your code runs, saving hours of debugging in larger apps.",lessons:[
+{id:"ts1",title:"Why TypeScript & basic types",content:"**TypeScript** is JavaScript with types. It catches bugs BEFORE your code runs.\n\n```ts\nfunction add(a: number, b: number): number {\n  return a + b;\n}\nadd(\"5\", 3); // ERROR!\n```\n\n**Basic types:**\n```ts\nlet name: string = \"Alex\";\nlet age: number = 25;\nlet active: boolean = true;\nlet items: string[] = [\"a\", \"b\"];\n```\n\n**Why bother?** In a 50-line script, types feel like overhead. In a 5,000-line app, they save hours of debugging.",challenge:{prompt:"Write a function called `multiply` with type annotations: takes two numbers, returns a number.",check:c=>c.includes("multiply")&&c.includes(": number")&&(c.match(/number/g)?.length>=2),hint:"function multiply(a: number, b: number): number { return a * b; }"}},
+{id:"ts2",title:"Interfaces & type aliases",content:"**Interfaces** define the shape of objects — contracts your data must follow.\n\n```ts\ninterface User {\n  id: number;\n  name: string;\n  email: string;\n  isAdmin?: boolean; // optional\n}\n\ntype Status = \"active\" | \"inactive\" | \"banned\";\n```\n\n**When to use which?**\n• Interface — for object shapes (most of the time)\n• Type — for unions, primitives, or complex types",challenge:{prompt:"Create an interface called `Project` with: id (number), title (string), completed (boolean), and optional tags (string array).",check:c=>c.includes("interface")&&c.includes("Project")&&c.includes("id")&&c.includes("title")&&c.includes("completed")&&c.includes("tags")&&c.includes("?"),hint:"Use ? for optional: tags?: string[]"}},
+{id:"ts3",title:"Generics",content:"**Generics** let you write reusable code that works with any type — without losing type safety.\n\n```ts\nfunction identity<T>(value: T): T {\n  return value;\n}\n\nidentity<string>(\"hello\"); // string\nidentity<number>(42);      // number\n```\n\nYou'll see generics all over React:\n```ts\nconst [count, setCount] = useState<number>(0);\nconst ref = useRef<HTMLDivElement>(null);\n```\n\nAnd in utility functions:\n```ts\nfunction first<T>(arr: T[]): T | undefined {\n  return arr[0];\n}\n```\n\n**Why generics?** Without them you'd write a separate function for every type, or fall back to `any` — which throws away all type checking.",challenge:{prompt:"Write a generic function called `wrap` that takes any value and returns it inside an array. E.g. wrap(5) → [5], wrap('hi') → ['hi'].",check:c=>c.includes("wrap")&&c.includes("<T>")&&(c.includes("T[]")||c.includes("Array<T>"))&&(c.includes("return [")|| c.includes("return[")),hint:"function wrap<T>(value: T): T[] { return [value]; }"}},
+{id:"ts4",title:"Utility types",content:"TypeScript ships with built-in types that transform other types — no need to write them yourself.\n\n```ts\ninterface User {\n  id: number;\n  name: string;\n  email: string;\n  password: string;\n}\n\ntype UserUpdate = Partial<User>;             // all fields optional\ntype PublicUser  = Pick<User, \"id\" | \"name\">;// only those fields\ntype SafeUser    = Omit<User, \"password\">;   // exclude one field\ntype Flags       = Record<string, boolean>;  // key→value map\n```\n\n**When you'll reach for them:**\n• `Partial` — PATCH/update endpoints where not all fields are required\n• `Pick` / `Omit` — shaping API responses so you don't leak sensitive data\n• `Record` — feature flags, lookup tables, config objects",challenge:{prompt:"Define an interface `Task` with id, title, done, and priority. Then create a type `NewTask` using Omit that excludes the id field.",check:c=>c.includes("interface")&&c.includes("Task")&&c.includes("Omit")&&c.includes("NewTask")&&c.includes("id"),hint:"interface Task { id: number; title: string; done: boolean; priority: number; }\ntype NewTask = Omit<Task, 'id'>;"}},
+{id:"ts5",title:"Type narrowing & guards",content:"**Narrowing** is how TypeScript refines a broad type to a more specific one inside a conditional — giving you the right methods and properties automatically.\n\n```ts\nfunction process(value: string | number) {\n  if (typeof value === \"string\") {\n    return value.toUpperCase(); // TS knows: string\n  }\n  return value * 2; // TS knows: number\n}\n```\n\n**Custom type guard** — a function that narrows for you:\n```ts\nfunction isString(val: unknown): val is string {\n  return typeof val === \"string\";\n}\n```\n\n**Narrowing techniques:**\n• `typeof` — primitives (string, number, boolean)\n• `instanceof` — class instances (Date, Error)\n• `in` — check if an object has a property\n• Custom guards — anything more complex",challenge:{prompt:"Write a function `isString` that takes a parameter typed as `unknown` and returns `val is string` — use typeof inside.",check:c=>c.includes("isString")&&c.includes("is string")&&c.includes("typeof")&&c.includes("unknown"),hint:"function isString(val: unknown): val is string { return typeof val === 'string'; }"}},
+]},
+{id:"react",title:"React deep dive",icon:"Re",color:A.cyan,description:"The dominant library for building user interfaces. Used for SPAs, dashboards, and apps at every scale — from solo side projects to products at Meta and Airbnb. If you want to build something users interact with in a browser, React is the practical place to start.",lessons:[
+{id:"r1",title:"Components & JSX",content:"**React components** are functions that return UI. Everything in React is a component.\n\n```jsx\nfunction UserCard({ user }) {\n  return (\n    <div className=\"card\">\n      <h2>{user.name}</h2>\n      <p>{user.isAdmin ? \"Admin\" : \"User\"}</p>\n    </div>\n  );\n}\n```\n\n**Key rules:**\n• Component names are PascalCase\n• Must return ONE root element\n• Use className not class\n• Curly braces {} for JS expressions",challenge:{prompt:"Write a React component called `Badge` that takes `label` and `color` as props and renders a span with the label text.",check:c=>c.includes("Badge")&&(c.includes("{ label")||c.includes("{label"))&&c.includes("span")&&c.includes("return"),hint:"function Badge({ label, color }) { return <span style={{color}}>{label}</span>; }"}},
+{id:"r2",title:"useState & state management",content:"**State** is data that changes over time. When state changes, React re-renders.\n\n```jsx\nimport { useState } from \"react\";\n\nfunction Counter() {\n  const [count, setCount] = useState(0);\n  return (\n    <div>\n      <p>Count: {count}</p>\n      <button onClick={() => setCount(count + 1)}>Add</button>\n    </div>\n  );\n}\n```\n\n**Rules of state:**\n• Never modify directly (count++ is WRONG)\n• Always use the setter function\n• State updates trigger re-renders",challenge:{prompt:"Write a useState hook that tracks a `score` starting at 0, and a function called `addPoints` that increases it by 10.",check:c=>c.includes("useState")&&c.includes("score")&&c.includes("setScore")&&(c.includes("+ 10")||c.includes("+10")),hint:"const [score, setScore] = useState(0); const addPoints = () => setScore(score + 10);"}},
+{id:"r3",title:"useEffect & side effects",content:"**useEffect** runs code after a render — for data fetching, subscriptions, and anything that reaches outside React.\n\n```jsx\nuseEffect(() => {\n  document.title = `Score: ${score}`;\n}, [score]); // re-runs whenever score changes\n```\n\n**Data fetching pattern:**\n```jsx\nconst [users, setUsers] = useState([]);\n\nuseEffect(() => {\n  fetch(\"/api/users\")\n    .then(r => r.json())\n    .then(data => setUsers(data));\n}, []); // empty array = run once on mount\n```\n\n**The dependency array:**\n• `[]` — run once on mount\n• `[value]` — run when value changes\n• no array — run after every render (rarely what you want)\n\n**Cleanup** — return a function to tear down subscriptions/timers:\n```jsx\nuseEffect(() => {\n  const id = setInterval(tick, 1000);\n  return () => clearInterval(id);\n}, []);",challenge:{prompt:"Write a useEffect that sets document.title to 'Items: ' + count whenever count changes. Assume count is already declared.",check:c=>c.includes("useEffect")&&c.includes("document.title")&&c.includes("count")&&c.includes("[count]"),hint:"useEffect(() => { document.title = 'Items: ' + count; }, [count]);"}},
+{id:"r4",title:"useRef & DOM access",content:"**useRef** gives you a mutable value that persists across renders WITHOUT triggering a re-render.\n\n**1. Access a DOM element directly:**\n```jsx\nconst inputRef = useRef(null);\n\nfunction focusInput() {\n  inputRef.current.focus();\n}\n\nreturn <input ref={inputRef} />;\n```\n\n**2. Store a value without causing re-renders:**\n```jsx\nconst timerRef = useRef(null);\n\nuseEffect(() => {\n  timerRef.current = setInterval(tick, 1000);\n  return () => clearInterval(timerRef.current);\n}, []);\n```\n\n**useState vs useRef:**\n• useState — triggers a re-render when it changes (use for UI data)\n• useRef — does NOT re-render (use for refs, timers, prev values)",challenge:{prompt:"Write a React component `AutoFocus` with an input that automatically gets focused when the component mounts. Use useRef and useEffect.",check:c=>c.includes("useRef")&&c.includes("useEffect")&&c.includes(".focus")&&c.includes("ref"),hint:"const ref = useRef(null); useEffect(() => { ref.current.focus(); }, []); return <input ref={ref} />;"}},
+{id:"r5",title:"Custom hooks",content:"**Custom hooks** extract and share stateful logic between components. Any function starting with `use` that calls other hooks is a custom hook.\n\n```jsx\nfunction useCounter(initial = 0) {\n  const [count, setCount] = useState(initial);\n  const increment = () => setCount(c => c + 1);\n  const reset     = () => setCount(initial);\n  return { count, increment, reset };\n}\n\n// Use it in any component:\nfunction App() {\n  const { count, increment } = useCounter(10);\n  return <button onClick={increment}>{count}</button>;\n}\n```\n\n**When to extract a custom hook:**\n• The same useState + useEffect logic appears in multiple components\n• The logic is complex enough to deserve a name\n• You want to test it separately from UI\n\nCommon hooks you'll build: `useLocalStorage`, `useFetch`, `useDebounce`, `useOnClickOutside`.",challenge:{prompt:"Write a custom hook `useToggle` that takes an initial boolean (default false) and returns [value, toggle] — where toggle flips the current value.",check:c=>c.includes("useToggle")&&c.includes("useState")&&(c.includes("!v")||c.includes("!value")||c.includes("prev =>"))&&c.includes("return"),hint:"function useToggle(initial = false) { const [value, setValue] = useState(initial); const toggle = () => setValue(v => !v); return [value, toggle]; }"}},
+]},
+{id:"node",title:"Node.js & Express",icon:"No",color:A.green,description:"JavaScript on the server. Used to build REST APIs, webhooks, CLI tools, and real-time services. The back-end layer of most JS full-stack apps — pair it with React on the front and PostgreSQL as the database and you have a complete production stack.",lessons:[
+{id:"n1",title:"Express basics & routing",content:"**Express** is the most popular Node.js framework for building APIs.\n\n```js\nconst express = require(\"express\");\nconst app = express();\n\napp.get(\"/api/users\", (req, res) => {\n  res.json([{ id: 1, name: \"Alex\" }]);\n});\n\napp.post(\"/api/users\", (req, res) => {\n  const { name, email } = req.body;\n  res.status(201).json({ id: 2, name, email });\n});\n```\n\n**The pattern:** Every route has a METHOD, a PATH, and a HANDLER.",challenge:{prompt:"Write an Express GET route for \"/api/products\" that returns a JSON array with two product objects.",check:c=>c.includes("app.get")&&c.includes("/api/products")&&c.includes("res.json")&&c.includes("["),hint:"app.get('/api/products', (req, res) => { res.json([{id:1, name:'Widget'}]); });"}},
+{id:"n2",title:"Middleware & error handling",content:"**Middleware** functions run between a request arriving and your route handler — they form a pipeline.\n\n```js\n// Signature: (req, res, next)\nconst logger = (req, res, next) => {\n  console.log(`${req.method} ${req.url}`);\n  next(); // MUST call next() or the request hangs\n};\napp.use(logger);\n```\n\n**Error-handling middleware** takes 4 arguments:\n```js\napp.use((err, req, res, next) => {\n  console.error(err.message);\n  res.status(err.status || 500).json({ error: err.message });\n});\n```\n\n**Order matters** — define error middleware LAST, after all routes. Common built-ins: `express.json()` (parse request body), `cors()` (allow cross-origin requests).",challenge:{prompt:"Write middleware called `authCheck` that checks for an `authorization` header. If missing, send a 401 JSON response. Otherwise call next().",check:c=>c.includes("authCheck")&&c.includes("req")&&c.includes("next")&&(c.includes("authorization")||c.includes("Authorization"))&&c.includes("401"),hint:"const authCheck = (req, res, next) => { if (!req.headers.authorization) return res.status(401).json({error:'Unauthorized'}); next(); };"}},
+{id:"n3",title:"Environment variables & config",content:"**Environment variables** keep secrets and configuration out of your source code. Never hardcode API keys, database passwords, or ports.\n\n```js\n// .env file (never commit this — add to .gitignore)\nPORT=3000\nDB_URL=postgres://localhost/mydb\nJWT_SECRET=supersecret123\n\n// In your app\nrequire('dotenv').config();\n\nconst port   = process.env.PORT || 3000;    // fallback for dev\nconst dbUrl  = process.env.DB_URL;          // required — crash if missing\n```\n\n**Setup:**\n```bash\nnpm install dotenv\n```\n\n**Best practices:**\n• Always provide sensible defaults for non-secret vars\n• Throw an error on startup if required secrets are missing\n• Commit a `.env.example` file so teammates know which vars they need",challenge:{prompt:"Write a function `getConfig` that reads PORT (default 3000) and NODE_ENV (default 'development') from process.env and returns them as an object.",check:c=>c.includes("getConfig")&&c.includes("process.env")&&(c.includes("PORT")||c.includes("port"))&&(c.includes("NODE_ENV")||c.includes("env")),hint:"function getConfig() { return { port: process.env.PORT || 3000, env: process.env.NODE_ENV || 'development' }; }"}},
+{id:"n4",title:"Database queries with pg",content:"**pg** is the standard PostgreSQL client for Node. You create a connection pool and run parameterized queries.\n\n```js\nconst { Pool } = require('pg');\nconst pool = new Pool({ connectionString: process.env.DB_URL });\n\nasync function getUserById(id) {\n  const result = await pool.query(\n    'SELECT * FROM users WHERE id = $1',\n    [id]  // $1 is replaced with the actual value\n  );\n  return result.rows[0]; // rows is always an array\n}\n```\n\n**Why `$1` placeholders?** String interpolation → SQL injection. Always use parameterized queries.\n\n```js\nasync function createUser(name, email) {\n  const { rows } = await pool.query(\n    'INSERT INTO users (name, email) VALUES ($1, $2) RETURNING *',\n    [name, email]\n  );\n  return rows[0];\n}",challenge:{prompt:"Write an async function `getPostsByUser` that takes a userId and queries 'SELECT * FROM posts WHERE user_id = $1'. Return result.rows.",check:c=>c.includes("getPostsByUser")&&(c.includes("pool")||c.includes("query"))&&c.includes("$1")&&c.includes("rows"),hint:"async function getPostsByUser(userId) { const result = await pool.query('SELECT * FROM posts WHERE user_id = $1', [userId]); return result.rows; }"}},
+{id:"n5",title:"JWT authentication",content:"**JWT (JSON Web Token)** is the standard for API authentication. The server signs a token on login; the client sends it back with every protected request.\n\n```js\nconst jwt = require('jsonwebtoken');\n\n// On login — create and return a token\nconst token = jwt.sign(\n  { userId: user.id, role: user.role },\n  process.env.JWT_SECRET,\n  { expiresIn: '7d' }\n);\n\n// Middleware — verify on protected routes\nconst requireAuth = (req, res, next) => {\n  const token = req.headers.authorization?.split(' ')[1];\n  if (!token) return res.status(401).json({ error: 'No token' });\n  try {\n    req.user = jwt.verify(token, process.env.JWT_SECRET);\n    next();\n  } catch {\n    res.status(401).json({ error: 'Invalid token' });\n  }\n};\n```\n\n**Flow:** POST /login → receive token → send `Authorization: Bearer <token>` with every subsequent request.",challenge:{prompt:"Write Express middleware `requireAuth` that reads a Bearer token from the Authorization header and returns 401 if it's missing. If present, call next().",check:c=>c.includes("requireAuth")&&(c.includes("authorization")||c.includes("Authorization"))&&c.includes("401")&&c.includes("next")&&c.includes("split"),hint:"const requireAuth = (req, res, next) => { const token = req.headers.authorization?.split(' ')[1]; if (!token) return res.status(401).json({error:'No token'}); next(); };"}},
+]},
+{id:"sql",title:"PostgreSQL mastery",icon:"PG",color:A.purple,description:"The most widely-used open-source relational database. Powers every serious web app — users, orders, products, and posts all live here. Understanding SQL means understanding how data is actually read and written in production.",lessons:[
+{id:"sq1",title:"SELECT queries & filtering",content:"**SQL** is the language of databases. Every web app talks to a database with SQL.\n\n```sql\nSELECT * FROM users;\nSELECT name, email FROM users WHERE age > 25;\nSELECT * FROM users WHERE role = 'admin' ORDER BY created_at DESC;\nSELECT * FROM users LIMIT 10;\n```\n\n**Key operators:**\n• = equals, != not equals\n• >, <, >=, <= comparisons\n• AND, OR combine conditions\n• LIKE for pattern matching\n• IN for multiple values",challenge:{prompt:"Write a SELECT query that gets name and email of all users where role is 'admin', ordered by name.",check:c=>{const l=c.toLowerCase();return l.includes("select")&&l.includes("name")&&l.includes("email")&&l.includes("from users")&&l.includes("admin")&&l.includes("order by");},hint:"SELECT name, email FROM users WHERE role = 'admin' ORDER BY name ASC;"}},
+{id:"sq2",title:"JOINs",content:"**JOINs** combine rows from two tables based on a related column. This is how you retrieve connected data.\n\n```sql\n-- INNER JOIN: only rows that match in BOTH tables\nSELECT users.name, orders.total\nFROM users\nINNER JOIN orders ON orders.user_id = users.id;\n\n-- LEFT JOIN: all rows from users, even those with no orders\nSELECT users.name, orders.total\nFROM users\nLEFT JOIN orders ON orders.user_id = users.id;\n```\n\n**INNER vs LEFT:**\n• INNER — only matched rows (user must have an order to appear)\n• LEFT — all left-table rows, NULLs where no match exists\n\n**Aliases keep it readable:**\n```sql\nSELECT u.name, o.total\nFROM users u\nJOIN orders o ON o.user_id = u.id\nWHERE o.total > 100;",challenge:{prompt:"Write a query that selects product name and category name by joining a products table to a categories table (products.category_id = categories.id).",check:c=>{const l=c.toLowerCase();return l.includes("join")&&l.includes("products")&&l.includes("categories")&&l.includes("category_id");},hint:"SELECT products.name, categories.name FROM products JOIN categories ON products.category_id = categories.id;"}},
+{id:"sq3",title:"Aggregations & GROUP BY",content:"**Aggregate functions** compute a single value from many rows.\n\n```sql\nSELECT COUNT(*) FROM users;          -- total row count\nSELECT AVG(salary) FROM employees;   -- average salary\nSELECT SUM(total) FROM orders;       -- total revenue\nSELECT MAX(price) FROM products;     -- most expensive item\n```\n\n**GROUP BY** — run the aggregate per group:\n```sql\nSELECT department, COUNT(*) AS headcount, AVG(salary)\nFROM employees\nGROUP BY department;\n```\n\n**HAVING** — filter after grouping (WHERE filters before grouping):\n```sql\nSELECT user_id, COUNT(*) AS order_count\nFROM orders\nGROUP BY user_id\nHAVING COUNT(*) > 5;\n```\n\nYou'll use aggregations constantly for dashboards, reports, and analytics.",challenge:{prompt:"Write a query counting orders per user_id from an orders table. Show user_id and order_count. Only include users with more than 2 orders.",check:c=>{const l=c.toLowerCase();return l.includes("count")&&l.includes("group by")&&l.includes("having")&&l.includes("orders");},hint:"SELECT user_id, COUNT(*) AS order_count FROM orders GROUP BY user_id HAVING COUNT(*) > 2;"}},
+{id:"sq4",title:"Indexes & performance",content:"**Indexes** are the main way to make queries fast. Without them, Postgres scans every row for every query.\n\n```sql\n-- Basic index on a frequently queried column\nCREATE INDEX idx_users_email ON users(email);\n\n-- Unique index (also enforces uniqueness constraint)\nCREATE UNIQUE INDEX idx_users_email ON users(email);\n\n-- Composite index for common multi-column queries\nCREATE INDEX idx_posts_user_status ON posts(user_id, status);\n```\n\n**Rule of thumb:** index columns you filter by (WHERE), join on, or sort by (ORDER BY).\n\n**EXPLAIN ANALYZE** shows exactly how Postgres runs a query:\n```sql\nEXPLAIN ANALYZE SELECT * FROM users WHERE email = 'a@b.com';\n```\n\n**Don't over-index** — each index slows down writes (INSERT, UPDATE, DELETE) and takes disk space.",challenge:{prompt:"Write SQL to create an index on the posts table for the user_id column. Then write an EXPLAIN query to see how Postgres finds posts by user_id.",check:c=>{const l=c.toLowerCase();return l.includes("create index")&&l.includes("posts")&&l.includes("user_id");},hint:"CREATE INDEX idx_posts_user_id ON posts(user_id);\nEXPLAIN SELECT * FROM posts WHERE user_id = 1;"}},
+{id:"sq5",title:"Transactions",content:"**Transactions** group multiple queries into one atomic operation — either ALL succeed or ALL are rolled back. Essential for data integrity.\n\n```sql\nBEGIN;\n\nUPDATE accounts SET balance = balance - 100 WHERE id = 1;\nUPDATE accounts SET balance = balance + 100 WHERE id = 2;\n\nCOMMIT;    -- save both changes\n-- or ROLLBACK; if something went wrong\n```\n\n**In Node.js with pg:**\n```js\nconst client = await pool.connect();\ntry {\n  await client.query('BEGIN');\n  await client.query('UPDATE accounts SET balance = balance - $1 WHERE id = $2', [amount, from]);\n  await client.query('UPDATE accounts SET balance = balance + $1 WHERE id = $2', [amount, to]);\n  await client.query('COMMIT');\n} catch (e) {\n  await client.query('ROLLBACK');\n  throw e;\n} finally {\n  client.release();\n}\n```\n\n**ACID** — transactions guarantee Atomicity, Consistency, Isolation, and Durability.",challenge:{prompt:"Write a SQL transaction that transfers 50 from account id=1 to account id=2. Include BEGIN, two UPDATE statements on a balance column, and COMMIT.",check:c=>{const l=c.toLowerCase();return l.includes("begin")&&(l.match(/update/g)||[]).length>=2&&l.includes("commit")&&l.includes("balance");},hint:"BEGIN;\nUPDATE accounts SET balance = balance - 50 WHERE id = 1;\nUPDATE accounts SET balance = balance + 50 WHERE id = 2;\nCOMMIT;"}},
+]},
+];
+
+const PG_CHALLENGES=[
+{id:1,title:"Rock Paper Scissors",difficulty:"easy",skill:"Game / JS",cat:"game",prompt:"Write a function `rps` that takes two moves ('rock', 'paper', 'scissors') and returns 'Player 1', 'Player 2', or 'Draw'.",check:c=>c.includes("rps")&&(c.includes("rock")||c.includes("paper"))&&(c.includes("return")||c.includes("=>")),hint:"Check all win conditions: rock beats scissors, scissors beats paper, paper beats rock."},
+{id:2,title:"Dice roller",difficulty:"easy",skill:"Game / JS",cat:"game",prompt:"Write a function `rollDice` that takes a number of sides (default 6) and returns a random integer from 1 to that number.",check:c=>c.includes("rollDice")&&c.includes("Math.random")&&(c.includes("Math.floor")||c.includes("Math.ceil")),hint:"Math.floor(Math.random() * sides) + 1"},
+{id:3,title:"Coin flip simulator",difficulty:"easy",skill:"Game / JS",cat:"game",prompt:"Write a function `flipCoins` that takes a number n and returns an object { heads: x, tails: y } after flipping n coins.",check:c=>c.includes("flipCoins")&&c.includes("Math.random")&&c.includes("heads")&&c.includes("tails"),hint:"Loop n times, Math.random() > 0.5 ? heads++ : tails++, return the object."},
+{id:4,title:"Word scrambler",difficulty:"medium",skill:"Game / JS",cat:"game",prompt:"Write a function `scramble` that takes a word and returns it with its letters randomly shuffled.",check:c=>c.includes("scramble")&&(c.includes("split")||c.includes("Array.from"))&&(c.includes("sort")||c.includes("Math.random")),hint:"Split into array, sort with () => Math.random() - 0.5, join back."},
+{id:5,title:"Score tracker",difficulty:"medium",skill:"Game / React",cat:"game",prompt:"Write a React component `ScoreBoard` with two players. Each has a name, score, and +1 / -1 buttons. Use useState.",check:c=>c.includes("ScoreBoard")&&c.includes("useState")&&c.includes("onClick"),hint:"Two useState hooks, one per player. Render name, score, and two buttons each."},
+{id:6,title:"Trivia data model",difficulty:"medium",skill:"Game / Data",cat:"game",prompt:"Create an array of 3 trivia question objects. Each should have: question (string), options (array of 4 strings), and correctIndex (number).",check:c=>c.includes("question")&&c.includes("options")&&c.includes("correctIndex")&&c.includes("["),hint:"const trivia = [{ question: '...', options: ['a','b','c','d'], correctIndex: 2 }, ...]"},
+{id:10,title:"Sprint velocity calculator",difficulty:"easy",skill:"Agile / JS",cat:"agile",prompt:"Write a function `avgVelocity` that takes an array of story points per sprint and returns the average (rounded).",check:c=>c.includes("avgVelocity")&&(c.includes("reduce")||c.includes("forEach")||c.includes("for"))&&(c.includes("length")||c.includes("/ ")),hint:"Sum with reduce, divide by array length, Math.round() the result."},
+{id:11,title:"Priority matrix sorter",difficulty:"medium",skill:"Agile / JS",cat:"agile",prompt:"Write a function `prioritize` that takes objects with { name, impact, effort } and returns them sorted by impact/effort ratio (highest first).",check:c=>c.includes("prioritize")&&c.includes("sort")&&c.includes("impact")&&c.includes("effort"),hint:"items.sort((a, b) => (b.impact/b.effort) - (a.impact/a.effort))"},
+{id:12,title:"Retrospective categorizer",difficulty:"easy",skill:"Facilitation / JS",cat:"agile",prompt:"Write a function `categorizeRetro` that takes { text, type } items (type: 'good','improve','action') and returns an object grouping them by type.",check:c=>c.includes("categorizeRetro")&&(c.includes("reduce")||c.includes("forEach")||c.includes("filter")),hint:"Use reduce to build { good: [...], improve: [...], action: [...] }"},
+{id:13,title:"Meeting cost calculator",difficulty:"easy",skill:"Consulting / JS",cat:"agile",prompt:"Write a function `meetingCost` that takes attendees, avgHourlyCost, and durationMinutes and returns total cost.",check:c=>c.includes("meetingCost")&&(c.includes("*")||c.includes("attendees"))&&(c.includes("60")||c.includes("duration")),hint:"return attendees * avgHourlyCost * (durationMinutes / 60);"},
+{id:14,title:"RACI matrix builder",difficulty:"medium",skill:"Consulting / JS",cat:"agile",prompt:"Write a function `buildRACI` that takes { task, responsible, accountable, consulted, informed } objects and returns only tasks where 'responsible' matches a given person.",check:c=>c.includes("buildRACI")&&c.includes("filter")&&c.includes("responsible"),hint:"items.filter(item => item.responsible === personName)"},
+{id:15,title:"Standup timer",difficulty:"medium",skill:"Facilitation / React",cat:"agile",prompt:"Write a React component `StandupTimer` with countdown from 120 seconds. Include Start and Reset buttons using useState and useEffect.",check:c=>c.includes("StandupTimer")&&c.includes("useState")&&(c.includes("useEffect")||c.includes("setInterval")),hint:"useState for seconds and isRunning, useEffect with setInterval that decrements when running."},
+{id:16,title:"Stakeholder power grid",difficulty:"hard",skill:"Consulting / JS",cat:"agile",prompt:"Write `classifyStakeholders` that takes { name, influence, interest } (1-10) and groups into: 'manage closely', 'keep satisfied', 'keep informed', 'monitor'. Threshold is 5.",check:c=>c.includes("classifyStakeholders")&&c.includes("influence")&&c.includes("interest"),hint:"Check influence >= 5 and interest >= 5 combos."},
+{id:20,title:"User story formatter",difficulty:"easy",skill:"Product / JS",cat:"pm",prompt:"Write `formatStory` that takes role, action, benefit and returns: 'As a [role], I want to [action], so that [benefit].'",check:c=>c.includes("formatStory")&&(c.includes("As a")||c.includes("`As a")),hint:"return `As a ${role}, I want to ${action}, so that ${benefit}.`;"},
+{id:21,title:"Burndown data generator",difficulty:"medium",skill:"PM / JS",cat:"pm",prompt:"Write `burndown` that takes totalPoints and sprintDays, returns array of { day, ideal, actual }. Ideal decreases linearly, actual varies ±3.",check:c=>c.includes("burndown")&&(c.includes("ideal")||c.includes("actual"))&&(c.includes("day")||c.includes("for")),hint:"Loop 0..sprintDays. Ideal = totalPoints - (totalPoints/sprintDays * day). Actual = ideal + random offset."},
+{id:22,title:"Feature flag checker",difficulty:"easy",skill:"Product / JS",cat:"pm",prompt:"Write `isEnabled` that takes a flags object and flag name, returns whether enabled (default false if missing).",check:c=>c.includes("isEnabled")&&(c.includes("flags")||c.includes("["))&&(c.includes("false")||c.includes("??")||c.includes("||")),hint:"return flags[flagName] ?? false;"},
+{id:23,title:"Release notes generator",difficulty:"medium",skill:"Product / JS",cat:"pm",prompt:"Write `releaseNotes` that takes { type, description } commits (feat/fix/chore) and returns formatted string grouping by type.",check:c=>c.includes("releaseNotes")&&(c.includes("feat")||c.includes("fix"))&&(c.includes("filter")||c.includes("reduce")||c.includes("forEach")),hint:"Filter by type, build '## Features\\n- desc1\\n...'"},
+{id:24,title:"Sprint capacity planner",difficulty:"medium",skill:"PM / JS",cat:"pm",prompt:"Write `sprintCapacity` that takes { name, hoursPerDay, daysOff } team members and sprintDays. Return total available hours.",check:c=>c.includes("sprintCapacity")&&(c.includes("reduce")||c.includes("forEach")||c.includes("map"))&&(c.includes("hoursPerDay")||c.includes("daysOff")),hint:"Sum each: hoursPerDay * (sprintDays - daysOff)"},
+{id:25,title:"Risk register",difficulty:"hard",skill:"PM / JS",cat:"pm",prompt:"Write `riskScore` that takes { name, probability, impact } risks (1-5), calculates score (p×i), returns sorted desc with level: critical(>=15), high(>=10), medium(>=5), low(<5).",check:c=>c.includes("riskScore")&&c.includes("probability")&&c.includes("impact")&&(c.includes("sort")||c.includes("map")),hint:"Map to add score and level, then sort by score descending."},
+{id:26,title:"OKR progress tracker",difficulty:"medium",skill:"Product / React",cat:"pm",prompt:"Write React component `OKRCard` with objective string and keyResults array of { title, current, target }. Show progress bar per key result.",check:c=>c.includes("OKRCard")&&(c.includes("objective")||c.includes("keyResults"))&&c.includes("return"),hint:"Map keyResults, div with width = (current/target * 100)%."},
+{id:30,title:"Debounce function",difficulty:"hard",skill:"JavaScript",cat:"dev",prompt:"Write a `debounce` function that takes a function and delay, returns debounced version that only fires after delay since last call.",check:c=>c.includes("debounce")&&c.includes("setTimeout")&&(c.includes("clearTimeout")||c.includes("timer")),hint:"Store timer ID, clear on each call, set new timeout."},
+{id:31,title:"Array flatten",difficulty:"medium",skill:"JavaScript",cat:"dev",prompt:"Write `flatten` for nested arrays like [1,[2,[3,4]],5] → [1,2,3,4,5]. Recursive, no .flat().",check:c=>c.includes("flatten")&&(c.includes("Array.isArray")||c.includes("concat"))&&!c.includes(".flat("),hint:"If item is array, recursively flatten and concat. Otherwise push."},
+{id:32,title:"FizzBuzz",difficulty:"easy",skill:"JavaScript",cat:"dev",prompt:"Write `fizzBuzz(n)`: 'Fizz' if ÷3, 'Buzz' if ÷5, 'FizzBuzz' if both, else String(n).",check:c=>c.includes("fizzBuzz")&&c.includes("% 3")&&c.includes("% 5")&&c.includes("Fizz")&&c.includes("Buzz"),hint:"Check % 15 first, then % 3, then % 5, else String(n)."},
+{id:33,title:"SELECT with JOIN",difficulty:"medium",skill:"SQL",cat:"dev",prompt:"Write SQL query selecting user name and post titles by joining users and posts (posts.user_id = users.id).",check:c=>{const l=c.toLowerCase();return l.includes("select")&&l.includes("join")&&l.includes("users")&&l.includes("posts");},hint:"SELECT users.name, posts.title FROM users JOIN posts ON posts.user_id = users.id;"},
+{id:34,title:"React toggle component",difficulty:"medium",skill:"React",cat:"dev",prompt:"Write React component `Toggle` with button switching between 'ON' and 'OFF' using useState.",check:c=>c.includes("Toggle")&&c.includes("useState")&&c.includes("onClick"),hint:"const [on, setOn] = useState(false); button onClick={() => setOn(!on)}."},
+{id:35,title:"Express middleware",difficulty:"hard",skill:"Node.js",cat:"dev",prompt:"Write Express middleware `logger` that logs method, URL, timestamp then calls next().",check:c=>c.includes("logger")&&c.includes("req")&&c.includes("next")&&(c.includes("method")||c.includes("console.log")),hint:"const logger = (req, res, next) => { console.log(req.method, req.url); next(); };"},
+{id:36,title:"Memoize function",difficulty:"hard",skill:"JavaScript",cat:"dev",prompt:"Write `memoize` that caches results of expensive function calls based on arguments.",check:c=>c.includes("memoize")&&(c.includes("cache")||c.includes("Map")||c.includes("memo"))&&c.includes("return"),hint:"Use Map as cache. Key = JSON.stringify(args). Return cached if exists."},
+];
+
+const PROJECTS=[
+{id:1,title:"Typing speed racer",cat:"game",diff:"beginner",stack:"React, TypeScript",concept:"A typing speed test where users race against a timer. Show random quotes, track WPM and accuracy in real-time, and maintain a personal best leaderboard.",goals:["Event handling","Timer logic","State management","Real-time calculations"],features:["Random quote display","Live WPM counter","Accuracy percentage","Personal best tracking","Difficulty levels"]},
+{id:2,title:"Trivia battle arena",cat:"game",diff:"intermediate",stack:"React, Node, PostgreSQL",concept:"A multiplayer trivia game with categories, timed questions, scoring, and a leaderboard. Admins can add custom question packs for team events.",goals:["Full-stack CRUD","Timer sync","Score calculation","Auth & roles"],features:["Category selection","Timed questions (15s)","Score multiplier for streaks","Admin question editor","Global leaderboard"]},
+{id:3,title:"Code puzzle escape room",cat:"game",diff:"advanced",stack:"React, TypeScript, Node",concept:"An escape room where each 'lock' is a coding puzzle. Players solve progressively harder challenges to 'escape'. Track completion time and attempts.",goals:["Dynamic code evaluation","Progressive difficulty","State persistence","UX design"],features:["5-10 themed puzzle rooms","Hint system","Timer and attempt counter","Completion certificates","Multiple difficulty paths"]},
+{id:10,title:"Retro board",cat:"consulting",diff:"beginner",stack:"React, TypeScript",concept:"A sprint retrospective tool with three columns: What went well, What to improve, Action items. Users add cards, vote, and group by themes.",goals:["CRUD operations","Drag and drop","Vote/counter logic","Component design"],features:["Add/edit/delete cards","Upvote system","Column categories","Theme grouping","Export to clipboard"]},
+{id:11,title:"Workshop timer & facilitator toolkit",cat:"consulting",diff:"intermediate",stack:"React, TypeScript",concept:"A facilitation dashboard with timebox timers, parking lot, energy check, and agenda tracker for running workshops professionally.",goals:["Complex state management","Timer logic","UX for live events","Responsive design"],features:["Agenda with time blocks","Visual countdown timer","Parking lot for off-topics","Energy/mood poll","Session notes export"]},
+{id:12,title:"Stakeholder mapping tool",cat:"consulting",diff:"intermediate",stack:"React, D3.js, Node",concept:"Drag-and-drop power/interest grid for stakeholder analysis. Plot on 2x2 matrix, color-code by strategy, and export reports.",goals:["Drag and drop","Data visualization","CRUD with relationships","Export"],features:["Interactive 2x2 grid","Draggable stakeholder cards","Auto-classification","Notes per stakeholder","CSV export"]},
+{id:13,title:"Agile maturity assessment",cat:"consulting",diff:"advanced",stack:"React, Node, PostgreSQL",concept:"Self-assessment tool for teams to rate agile maturity across dimensions. Generates radar charts and recommendations.",goals:["Survey design","Radar charts","Scoring algorithms","Multi-user data"],features:["Multi-dimension questionnaire","Radar chart results","Team vs individual views","Historical trends","Auto improvement plan"]},
+{id:20,title:"Feature prioritization board",cat:"pm",diff:"beginner",stack:"React, TypeScript",concept:"A RICE scoring tool where PMs input features and auto-rank them. Includes drag override for manual adjustments.",goals:["Form handling","Sorting algorithms","Drag and drop","Data modeling"],features:["RICE score inputs","Auto-calculated ranking","Manual drag reorder","Color-coded tiers","Export ranked list"]},
+{id:21,title:"Sprint dashboard",cat:"pm",diff:"intermediate",stack:"React, Node, PostgreSQL",concept:"Real-time sprint tracking with burndown chart, velocity trends, blocker tracking, and team workload distribution.",goals:["Chart.js/Recharts","Real-time updates","Relational data","Dashboard design"],features:["Burndown chart","Velocity trend","Blocker board","Capacity heatmap","Sprint goal indicator"]},
+{id:22,title:"Roadmap timeline builder",cat:"pm",diff:"advanced",stack:"React, D3.js, Node, PostgreSQL",concept:"Visual product roadmap with swim lanes, draggable time bars, dependency arrows, and milestone markers.",goals:["Complex SVG rendering","Drag interactions","Date math","Data relationships"],features:["Swim lanes by team","Draggable bars","Dependency arrows","Milestone diamonds","Week/month/quarter zoom","Shareable link"]},
+{id:30,title:"CLI task manager",cat:"dev",diff:"beginner",stack:"Node.js, PostgreSQL",concept:"Command-line to-do app. Add, list, complete, delete tasks from terminal. Data persists in PostgreSQL.",goals:["Node.js CLI","PostgreSQL CRUD","SQL queries","Process arguments"],features:["add 'task name'","list --all/--done/--pending","done <id>","delete <id>","stats"]},
+{id:31,title:"REST API with auth",cat:"dev",diff:"intermediate",stack:"Node, Express, PostgreSQL, JWT",concept:"Production-quality REST API with JWT authentication, role-based access, validation, and error handling.",goals:["API design","JWT auth flow","Middleware chains","Error handling"],features:["Register/login","JWT refresh","Role-based protection","Input validation","Rate limiting"]},
+{id:32,title:"Real-time collaboration board",cat:"dev",diff:"advanced",stack:"React, Node, WebSockets, PostgreSQL",concept:"Shared whiteboard with live cursors, sticky notes, and chat. Think Miro-lite.",goals:["WebSocket protocol","Real-time sync","Optimistic updates","Conflict resolution"],features:["Live cursor tracking","Drag-and-drop stickies","Real-time chat","Presence indicators","Persistence"]},
+];
+
+// ─── STATE INIT ───
+const initProgress=()=>{const p={};MODULES_DATA.forEach(m=>m.lessons.forEach(l=>{p[l.id]={completed:false};}));return p;};
+
+// ─── STORAGE ───
+const LS_KEY="devos_state";
+const loadState=()=>{try{const s=localStorage.getItem(LS_KEY);if(s){const d=JSON.parse(s);return{progress:d.progress||initProgress(),xp:d.xp||0,sessions:d.sessions||0};}}catch(e){}return null;};
+const saveState=(progress,xp,sessions)=>{try{localStorage.setItem(LS_KEY,JSON.stringify({progress,xp,sessions}));}catch(e){}};
+
+// ─── UI COMPONENTS ───
+function Bar({pct,color,h=6}){return React.createElement("div",{style:{width:"100%",height:h,background:"rgba(255,255,255,0.06)",borderRadius:h}},React.createElement("div",{style:{width:`${Math.min(100,pct)}%`,height:"100%",borderRadius:h,background:color,boxShadow:`0 0 8px ${color}44`,transition:"width 0.6s"}}));}
+function Tag({children,color}){return React.createElement("span",{style:{fontSize:11,padding:"2px 8px",borderRadius:99,background:dim(color),color,fontWeight:500,whiteSpace:"nowrap"}},children);}
+function Stat({label,value,color}){return React.createElement("div",{style:{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.06)",borderRadius:12,padding:"14px 16px"}},React.createElement("div",{style:{fontSize:10,color:"#666",textTransform:"uppercase",letterSpacing:1,marginBottom:4}},label),React.createElement("div",{style:{fontSize:24,fontWeight:600,color:color||"#fff"}},value));}
+function Btn({children,onClick,color=A.blue,outline,disabled,style:s}){return React.createElement("button",{onClick,disabled,style:{padding:"8px 20px",borderRadius:8,border:outline?`1px solid ${color}44`:"none",background:outline?dim(color):(disabled?"#333":color),color:outline?color:(disabled?"#666":"#fff"),fontSize:13,fontWeight:600,cursor:disabled?"default":"pointer",...(s||{})}},children);}
+function CodeEditor({value,onChange}){return React.createElement("textarea",{value,onChange:e=>onChange(e.target.value),placeholder:"// Write your code here...",spellCheck:false,style:{width:"100%",minHeight:130,padding:16,background:"rgba(0,0,0,0.4)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:10,color:"#e2e8f0",fontFamily:"'SF Mono','Fira Code',monospace",fontSize:13,lineHeight:1.6,resize:"vertical",outline:"none",boxSizing:"border-box"}});}
+
+function Markdown({text}){
+  const lines=text.split("\n");
+  let inCode=false;
+  return React.createElement("div",{style:{fontSize:14,lineHeight:1.7,color:"#c8ccd0"}},lines.map((line,i)=>{
+    if(line.startsWith("```")){inCode=!inCode;return null;}
+    if(inCode)return React.createElement("div",{key:i,style:{fontFamily:"monospace",fontSize:13,color:A.amber,background:"rgba(0,0,0,0.3)",padding:"1px 8px",margin:0}},line);
+    if(line.startsWith("**")&&line.endsWith("**"))return React.createElement("p",{key:i,style:{fontWeight:600,color:"#eee",margin:"16px 0 6px"}},line.replace(/\*\*/g,""));
+    if(line.startsWith("•"))return React.createElement("div",{key:i,style:{paddingLeft:12,margin:"3px 0"}},renderInline(line));
+    if(!line.trim())return React.createElement("div",{key:i,style:{height:8}});
+    return React.createElement("p",{key:i,style:{margin:"6px 0"}},renderInline(line));
+  }));
+}
+function renderInline(t){
+  return t.split(/(`[^`]+`)/g).map((p,i)=>p.startsWith("`")&&p.endsWith("`")?React.createElement("code",{key:i,style:{background:"rgba(255,255,255,0.08)",padding:"1px 5px",borderRadius:4,fontSize:12,fontFamily:"monospace",color:A.cyan}},p.slice(1,-1)):React.createElement("span",{key:i},p.replace(/\*\*([^*]+)\*\*/g,(_,b)=>b)));
+}
+
+// ─── LESSON VIEW ───
+function LessonView({lesson,module:mod,onComplete,isCompleted,onBack}){
+  const[code,setCode]=useState("");
+  const[result,setResult]=useState(null);
+  const[showHint,setShowHint]=useState(false);
+  const submit=()=>{const p=lesson.challenge.check(code);setResult(p);if(p)onComplete(lesson.id);};
+  return React.createElement("div",null,
+    React.createElement("button",{onClick:onBack,style:{background:"none",border:"none",color:A.blue,cursor:"pointer",fontSize:13,padding:0,marginBottom:16}},"\u2190 Back to ",mod.title),
+    React.createElement("div",{style:{display:"flex",alignItems:"center",gap:10,marginBottom:20}},
+      React.createElement("h1",{style:{fontSize:20,fontWeight:600,color:"#fff",margin:0,flex:1}},lesson.title),
+      isCompleted&&React.createElement(Tag,{color:A.green},"Completed")),
+    React.createElement("div",{style:{background:"rgba(255,255,255,0.02)",border:"1px solid rgba(255,255,255,0.06)",borderRadius:14,padding:24,marginBottom:20}},React.createElement(Markdown,{text:lesson.content})),
+    lesson.challenge&&React.createElement("div",{style:{background:"rgba(255,255,255,0.02)",border:`1px solid ${result===true?A.green+"44":result===false?A.red+"44":"rgba(255,255,255,0.06)"}`,borderRadius:14,padding:24}},
+      React.createElement("h3",{style:{fontSize:14,fontWeight:600,color:A.amber,margin:"0 0 4px"}},"Challenge"),
+      React.createElement("p",{style:{fontSize:13,color:"#bbb",margin:"0 0 14px"}},lesson.challenge.prompt),
+      React.createElement(CodeEditor,{value:code,onChange:v=>{setCode(v);setResult(null);}}),
+      React.createElement("div",{style:{display:"flex",gap:8,marginTop:12,alignItems:"center",flexWrap:"wrap"}},
+        React.createElement(Btn,{onClick:submit,disabled:!code.trim()},"Submit"),
+        React.createElement(Btn,{onClick:()=>setShowHint(!showHint),outline:true,color:A.amber},showHint?"Hide hint":"Hint"),
+        result===true&&React.createElement("span",{style:{color:A.green,fontSize:13,fontWeight:500}},"\u2713 Correct! +20 XP"),
+        result===false&&React.createElement("span",{style:{color:A.red,fontSize:13}},"Not quite \u2014 check the hint or try again.")),
+      showHint&&React.createElement("div",{style:{marginTop:10,padding:12,background:dim(A.amber),borderRadius:8,fontSize:12,color:A.amber,fontFamily:"monospace",lineHeight:1.5}},lesson.challenge.hint))
+  );
+}
+
+// ─── PLAYGROUND ───
+function PlaygroundSession({onEnd}){
+  const[catF,setCatF]=useState("all");
+  const[diffF,setDiffF]=useState("all");
+  const[ci,setCi]=useState(0);
+  const[code,setCode]=useState("");
+  const[result,setResult]=useState(null);
+  const[score,setScore]=useState(0);
+  const[completed,setCompleted]=useState(0);
+  const[timer,setTimer]=useState(0);
+  const[showHint,setShowHint]=useState(false);
+  const[history,setHistory]=useState([]);
+  useEffect(()=>{const iv=setInterval(()=>setTimer(t=>t+1),1000);return()=>clearInterval(iv);},[]);
+  const pool=PG_CHALLENGES.filter(c=>(catF==="all"||c.cat===catF)&&(diffF==="all"||c.difficulty===diffF));
+  const ch=pool.length>0?pool[ci%pool.length]:null;
+  const pts={easy:10,medium:25,hard:50};
+  const submit=()=>{if(!ch)return;const p=ch.check(code);setResult(p);if(p){setScore(s=>s+pts[ch.difficulty]);setCompleted(c=>c+1);}setHistory(h=>[...h,{title:ch.title,passed:p}]);};
+  const next=()=>{setCi(i=>pool.length>0?(i+1)%pool.length:0);setCode("");setResult(null);setShowHint(false);};
+  const fmt=s=>`${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`;
+  const catOpts=[["all","All"],["game","Games"],["agile","Agile"],["pm","PM"],["dev","Dev"]];
+  const catColors={all:A.blue,game:A.pink,agile:A.green,pm:A.amber,dev:A.cyan};
+
+  return React.createElement("div",null,
+    React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}},
+      React.createElement("h1",{style:{fontSize:20,fontWeight:600,color:"#fff",margin:0}},"Playground session"),
+      React.createElement("div",{style:{display:"flex",alignItems:"center",gap:14}},
+        React.createElement("span",{style:{fontFamily:"monospace",fontSize:20,color:A.amber}},fmt(timer)),
+        React.createElement(Btn,{onClick:()=>onEnd({score,completed,time:timer,history}),outline:true,color:A.red},"End"))),
+    React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:12}},
+      React.createElement(Stat,{label:"Solved",value:completed,color:A.green}),
+      React.createElement(Stat,{label:"XP earned",value:score,color:A.amber}),
+      React.createElement(Stat,{label:"Challenge",value:pool.length>0?`${(ci%pool.length)+1}/${pool.length}`:"0/0",color:A.blue})),
+    React.createElement("div",{style:{display:"flex",gap:6,marginBottom:8,flexWrap:"wrap"}},
+      catOpts.map(([v,l])=>React.createElement("button",{key:v,onClick:()=>{setCatF(v);setCi(0);setCode("");setResult(null);},style:{padding:"3px 10px",borderRadius:99,fontSize:11,border:"1px solid",borderColor:catF===v?catColors[v]:"rgba(255,255,255,0.08)",background:catF===v?dim(catColors[v]):"transparent",color:catF===v?catColors[v]:"#666",cursor:"pointer"}},l))),
+    React.createElement("div",{style:{display:"flex",gap:6,marginBottom:14}},
+      ["all","easy","medium","hard"].map(d=>React.createElement("button",{key:d,onClick:()=>{setDiffF(d);setCi(0);setCode("");setResult(null);},style:{padding:"3px 10px",borderRadius:99,fontSize:11,border:"1px solid",borderColor:diffF===d?A.amber:"rgba(255,255,255,0.08)",background:diffF===d?dim(A.amber):"transparent",color:diffF===d?A.amber:"#666",cursor:"pointer",textTransform:"capitalize"}},d))),
+    ch?React.createElement("div",{style:{background:"rgba(255,255,255,0.03)",border:`1px solid ${result===true?A.green+"44":result===false?A.red+"44":"rgba(255,255,255,0.06)"}`,borderRadius:14,padding:24}},
+      React.createElement("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:8,flexWrap:"wrap",gap:6}},
+        React.createElement("div",{style:{display:"flex",gap:6}},
+          React.createElement(Tag,{color:ch.difficulty==="easy"?A.green:ch.difficulty==="medium"?A.amber:A.red},ch.difficulty),
+          React.createElement(Tag,{color:catColors[ch.cat]||A.blue},ch.skill)),
+        React.createElement("span",{style:{fontSize:11,color:"#555"}},pts[ch.difficulty]," XP")),
+      React.createElement("h2",{style:{fontSize:16,fontWeight:600,color:"#eee",margin:"0 0 6px"}},ch.title),
+      React.createElement("p",{style:{fontSize:13,color:"#999",margin:"0 0 14px",lineHeight:1.5}},ch.prompt),
+      React.createElement(CodeEditor,{value:code,onChange:v=>{setCode(v);setResult(null);}}),
+      React.createElement("div",{style:{display:"flex",gap:8,marginTop:12,alignItems:"center",flexWrap:"wrap"}},
+        React.createElement(Btn,{onClick:submit,disabled:!code.trim()},"Submit"),
+        React.createElement(Btn,{onClick:next,outline:true,color:"#888"},result===true?"Next \u2192":"Skip"),
+        React.createElement(Btn,{onClick:()=>setShowHint(!showHint),outline:true,color:A.amber},showHint?"Hide hint":"Hint"),
+        result===true&&React.createElement("span",{style:{color:A.green,fontSize:13,fontWeight:500}},"+",pts[ch.difficulty]," XP"),
+        result===false&&React.createElement("span",{style:{color:A.red,fontSize:13}},"Not quite \u2014 try again or check the hint.")),
+      showHint&&React.createElement("div",{style:{marginTop:10,padding:12,background:dim(A.amber),borderRadius:8,fontSize:12,color:A.amber,fontFamily:"monospace",lineHeight:1.5}},ch.hint)
+    ):React.createElement("div",{style:{padding:40,textAlign:"center",color:"#666"}},"No challenges match these filters.")
+  );
+}
+
+function SessionSummary({data,onClose}){
+  const fmt=s=>`${Math.floor(s/60)}m ${s%60}s`;
+  return React.createElement("div",null,
+    React.createElement("h1",{style:{fontSize:22,fontWeight:600,color:"#fff",margin:"0 0 6px"}},"Session complete"),
+    React.createElement("p",{style:{color:"#666",margin:"0 0 20px",fontSize:14}},"Here's how you did"),
+    React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:20}},
+      React.createElement(Stat,{label:"Solved",value:data.completed,color:A.green}),
+      React.createElement(Stat,{label:"XP earned",value:data.score,color:A.amber}),
+      React.createElement(Stat,{label:"Time",value:fmt(data.time),color:A.blue})),
+    data.history.length>0&&React.createElement("div",{style:{background:"rgba(255,255,255,0.02)",border:"1px solid rgba(255,255,255,0.06)",borderRadius:12,padding:16,marginBottom:16}},
+      React.createElement("h3",{style:{fontSize:13,color:"#888",margin:"0 0 10px",fontWeight:500}},"Results"),
+      data.history.map((h,i)=>React.createElement("div",{key:i,style:{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:"1px solid rgba(255,255,255,0.04)"}},
+        React.createElement("span",{style:{fontSize:13,color:"#ccc"}},h.title),
+        React.createElement(Tag,{color:h.passed?A.green:A.red},h.passed?"Passed":"Failed")))),
+    React.createElement(Btn,{onClick:onClose},"Back to playground"));
+}
+
+// ─── PROJECTS PAGE ───
+function ProjectsPage(){
+  const[cat,setCat]=useState("all");
+  const[exp,setExp]=useState(null);
+  const catOpts=[["all","All"],["game","Games"],["consulting","Consulting / Agile"],["pm","Product / PM"],["dev","Dev"]];
+  const catColors={all:A.blue,game:A.pink,consulting:A.green,pm:A.amber,dev:A.cyan};
+  const filtered=cat==="all"?PROJECTS:PROJECTS.filter(p=>p.cat===cat);
+  const dc={beginner:A.green,intermediate:A.amber,advanced:A.red};
+  return React.createElement("div",null,
+    React.createElement("h1",{style:{fontSize:22,fontWeight:600,color:"#fff",margin:"0 0 6px"}},"Project prompts"),
+    React.createElement("p",{style:{color:"#666",margin:"0 0 20px",fontSize:14}},"Real projects \u2014 games, tools, dashboards, and dev work"),
+    React.createElement("div",{style:{display:"flex",gap:6,marginBottom:18,flexWrap:"wrap"}},
+      catOpts.map(([v,l])=>React.createElement("button",{key:v,onClick:()=>setCat(v),style:{padding:"4px 14px",borderRadius:99,fontSize:12,border:"1px solid",borderColor:cat===v?catColors[v]:"rgba(255,255,255,0.08)",background:cat===v?dim(catColors[v]):"transparent",color:cat===v?catColors[v]:"#888",cursor:"pointer"}},l))),
+    filtered.map(p=>React.createElement("div",{key:p.id,onClick:()=>setExp(exp===p.id?null:p.id),style:{background:"rgba(255,255,255,0.03)",border:`1px solid ${exp===p.id?dc[p.diff]+"33":"rgba(255,255,255,0.06)"}`,borderRadius:14,padding:20,marginBottom:10,cursor:"pointer",transition:"all 0.2s"}},
+      React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}},
+        React.createElement("div",{style:{fontSize:15,fontWeight:600,color:"#eee"}},p.title),
+        React.createElement("span",{style:{fontSize:11,color:"#555",fontFamily:"monospace"}},p.stack)),
+      React.createElement("div",{style:{display:"flex",gap:6,marginBottom:4}},
+        React.createElement(Tag,{color:dc[p.diff]},p.diff),
+        React.createElement(Tag,{color:catColors[p.cat]},catOpts.find(c=>c[0]===p.cat)?.[1])),
+      exp===p.id&&React.createElement("div",{style:{marginTop:12,paddingTop:12,borderTop:"1px solid rgba(255,255,255,0.06)"}},
+        React.createElement("p",{style:{fontSize:13,color:"#aaa",lineHeight:1.6,margin:"0 0 14px"}},p.concept),
+        React.createElement("div",{style:{marginBottom:12}},
+          React.createElement("div",{style:{fontSize:12,color:"#777",marginBottom:6}},"Features to build:"),
+          p.features.map((f,i)=>React.createElement("div",{key:i,style:{fontSize:12,color:"#999",padding:"3px 0 3px 12px",borderLeft:`2px solid ${dc[p.diff]}33`}},f))),
+        React.createElement("div",{style:{fontSize:12,color:"#777",marginBottom:6}},"Learning goals:"),
+        React.createElement("div",{style:{display:"flex",gap:6,flexWrap:"wrap"}},
+          p.goals.map((g,i)=>React.createElement(Tag,{key:i,color:A.purple},g))))
+    ))
+  );
+}
+
+// ─── APP ───
+function App(){
+  const saved=loadState();
+  const[page,setPage]=useState("dashboard");
+  const[progress,setProgress]=useState(saved?.progress||initProgress);
+  const[xp,setXp]=useState(saved?.xp||0);
+  const[activeModule,setActiveModule]=useState(null);
+  const[activeLesson,setActiveLesson]=useState(null);
+  const[pgActive,setPgActive]=useState(false);
+  const[pgSummary,setPgSummary]=useState(null);
+  const[sessions,setSessions]=useState(saved?.sessions||0);
+
+  useEffect(()=>{saveState(progress,xp,sessions);},[progress,xp,sessions]);
+
+  const completeLesson=id=>{if(!progress[id]?.completed){setProgress(p=>({...p,[id]:{completed:true}}));setXp(x=>x+20);}};
+  const totalDone=Object.values(progress).filter(p=>p.completed).length;
+  const totalLessons=Object.keys(progress).length;
+  const level=Math.floor(xp/100)+1;
+
+  const NAV=[{id:"dashboard",label:"Dashboard",icon:"\u2B21"},{id:"modules",label:"Modules",icon:"\u25A6"},{id:"playground",label:"Playground",icon:"\u25CE"},{id:"projects",label:"Projects",icon:"\u2726"}];
+
+  const goModule=m=>{setActiveModule(m);setActiveLesson(null);setPage("module");};
+  const goLesson=(m,l)=>{setActiveModule(m);setActiveLesson(l);setPage("lesson");};
+
+  const renderContent=()=>{
+    if(page==="lesson"&&activeModule&&activeLesson)return React.createElement(LessonView,{lesson:activeLesson,module:activeModule,onComplete:completeLesson,isCompleted:progress[activeLesson.id]?.completed,onBack:()=>{setPage("module");setActiveLesson(null);}});
+
+    if(page==="module"&&activeModule){
+      const m=activeModule;const done=m.lessons.filter(l=>progress[l.id]?.completed).length;
+      return React.createElement("div",null,
+        React.createElement("button",{onClick:()=>setPage("modules"),style:{background:"none",border:"none",color:A.blue,cursor:"pointer",fontSize:13,padding:0,marginBottom:16}},"\u2190 All modules"),
+        React.createElement("div",{style:{display:"flex",alignItems:"center",gap:12,marginBottom:16}},
+          React.createElement("div",{style:{width:40,height:40,borderRadius:10,background:dim(m.color),display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:700,color:m.color,fontFamily:"monospace"}},m.icon),
+          React.createElement("div",null,React.createElement("h1",{style:{fontSize:20,fontWeight:600,color:"#fff",margin:0}},m.title),React.createElement("p",{style:{color:"#666",margin:"2px 0 0",fontSize:13}},done,"/",m.lessons.length," completed"))),
+        m.description&&React.createElement("p",{style:{fontSize:13,color:"#666",margin:"0 0 14px",lineHeight:1.55,padding:"10px 14px",background:"rgba(255,255,255,0.02)",borderRadius:8,borderLeft:`2px solid ${m.color}44`}},m.description),
+        React.createElement(Bar,{pct:(done/m.lessons.length)*100,color:m.color,h:5}),
+        React.createElement("div",{style:{marginTop:16}},m.lessons.map((l,i)=>{
+          const comp=progress[l.id]?.completed;
+          return React.createElement("div",{key:l.id,onClick:()=>goLesson(m,l),style:{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",borderRadius:10,marginBottom:6,background:comp?"rgba(16,185,129,0.05)":"rgba(255,255,255,0.02)",border:`1px solid ${comp?"rgba(16,185,129,0.12)":"rgba(255,255,255,0.05)"}`,cursor:"pointer"}},
+            React.createElement("div",{style:{width:28,height:28,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:600,background:comp?dim(A.green):"rgba(255,255,255,0.05)",color:comp?A.green:"#555"}},comp?"\u2713":i+1),
+            React.createElement("div",{style:{flex:1,fontSize:13,color:comp?"#aaa":"#ddd",fontWeight:500}},l.title),
+            comp?React.createElement(Tag,{color:A.green},"Done"):React.createElement("span",{style:{fontSize:11,color:m.color}},"Start \u2192"));
+        })));
+    }
+
+    if(page==="playground"){
+      if(pgSummary)return React.createElement(SessionSummary,{data:pgSummary,onClose:()=>setPgSummary(null)});
+      if(pgActive)return React.createElement(PlaygroundSession,{onEnd:data=>{setPgActive(false);setPgSummary(data);setXp(x=>x+data.score);setSessions(s=>s+1);}});
+      const cc={game:0,agile:0,pm:0,dev:0};PG_CHALLENGES.forEach(c=>{if(cc[c.cat]!==undefined)cc[c.cat]++;});
+      const catLabel={game:"Game",agile:"Agile",pm:"PM",dev:"Dev"};const catColor={game:A.pink,agile:A.green,pm:A.amber,dev:A.cyan};
+      return React.createElement("div",null,
+        React.createElement("h1",{style:{fontSize:22,fontWeight:600,color:"#fff",margin:"0 0 6px"}},"Playground"),
+        React.createElement("p",{style:{color:"#666",margin:"0 0 20px",fontSize:14}},"Solve coding challenges \u2014 games, agile tools, PM tools, and dev puzzles"),
+        React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(130px, 1fr))",gap:10,marginBottom:20}},
+          React.createElement(Stat,{label:"Games",value:cc.game,color:A.pink}),React.createElement(Stat,{label:"Agile",value:cc.agile,color:A.green}),React.createElement(Stat,{label:"PM",value:cc.pm,color:A.amber}),React.createElement(Stat,{label:"Dev",value:cc.dev,color:A.cyan})),
+        React.createElement("div",{style:{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.06)",borderRadius:14,padding:24,textAlign:"center",marginBottom:20}},
+          React.createElement("div",{style:{fontSize:32,marginBottom:12}},"\u25CE"),
+          React.createElement("h2",{style:{fontSize:16,color:"#eee",margin:"0 0 6px",fontWeight:600}},"Start a practice session"),
+          React.createElement("p",{style:{fontSize:13,color:"#888",margin:"0 0 20px"}},"Write real code, get feedback, earn XP. Filter by category inside."),
+          React.createElement(Btn,{onClick:()=>{setPgActive(true);setPgSummary(null);}},"Start session")),
+        React.createElement("h3",{style:{fontSize:13,color:"#888",fontWeight:500,marginBottom:10}},"All challenges"),
+        PG_CHALLENGES.map(c=>React.createElement("div",{key:c.id,style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:"1px solid rgba(255,255,255,0.04)"}},
+          React.createElement("span",{style:{fontSize:13,color:"#ccc"}},c.title),
+          React.createElement("div",{style:{display:"flex",gap:6}},
+            React.createElement(Tag,{color:c.difficulty==="easy"?A.green:c.difficulty==="medium"?A.amber:A.red},c.difficulty),
+            React.createElement(Tag,{color:catColor[c.cat]},catLabel[c.cat])))));
+    }
+
+    if(page==="projects")return React.createElement(ProjectsPage);
+
+    if(page==="modules")return React.createElement("div",null,
+      React.createElement("h1",{style:{fontSize:22,fontWeight:600,color:"#fff",margin:"0 0 6px"}},"Learning modules"),
+      React.createElement("p",{style:{color:"#666",margin:"0 0 20px",fontSize:14}},"Structured paths \u2014 each module teaches a real skill"),
+      React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(280px, 1fr))",gap:12}},
+        MODULES_DATA.map(m=>{const done=m.lessons.filter(l=>progress[l.id]?.completed).length;const pct=Math.round((done/m.lessons.length)*100);
+          return React.createElement("div",{key:m.id,onClick:()=>goModule(m),style:{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.06)",borderRadius:14,padding:20,cursor:"pointer",transition:"all 0.2s"},onMouseEnter:e=>{e.currentTarget.style.borderColor=m.color+"44";},onMouseLeave:e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.06)";}},
+            React.createElement("div",{style:{display:"flex",alignItems:"center",gap:10,marginBottom:12}},
+              React.createElement("div",{style:{width:36,height:36,borderRadius:8,background:dim(m.color),display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:700,color:m.color,fontFamily:"monospace"}},m.icon),
+              React.createElement("div",null,React.createElement("div",{style:{fontSize:14,fontWeight:500,color:"#eee"}},m.title),React.createElement("div",{style:{fontSize:11,color:"#666"}},m.lessons.length," lessons"))),
+            m.description&&React.createElement("p",{style:{fontSize:12,color:"#555",margin:"0 0 10px",lineHeight:1.5}},m.description),
+            React.createElement(Bar,{pct,color:m.color}),
+            React.createElement("div",{style:{display:"flex",justifyContent:"space-between",marginTop:8}},
+              React.createElement("span",{style:{fontSize:11,color:"#555"}},done,"/",m.lessons.length),
+              pct===100?React.createElement(Tag,{color:A.green},"Complete"):pct>0?React.createElement(Tag,{color:m.color},pct,"%"):React.createElement("span",{style:{fontSize:11,color:m.color}},"Start \u2192")));})));
+
+    // DASHBOARD
+    return React.createElement("div",null,
+      React.createElement("div",{style:{marginBottom:24}},
+        React.createElement("h1",{style:{fontSize:22,fontWeight:600,color:"#fff",margin:0}},"Welcome to ",React.createElement("span",{style:{color:A.blue}},"DEVOS")),
+        React.createElement("p",{style:{color:"#666",margin:"4px 0 0",fontSize:14}},"Your personal coding learning system")),
+      React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(140px, 1fr))",gap:10,marginBottom:20}},
+        React.createElement(Stat,{label:"Level",value:level,color:A.blue}),React.createElement(Stat,{label:"Total XP",value:xp,color:A.amber}),React.createElement(Stat,{label:"Lessons done",value:totalDone,color:A.green}),React.createElement(Stat,{label:"Sessions",value:sessions,color:A.purple})),
+      React.createElement("div",{style:{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.06)",borderRadius:12,padding:16,marginBottom:20}},
+        React.createElement("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:6}},
+          React.createElement("span",{style:{fontSize:12,color:"#888"}},"Level ",level," \u2192 ",level+1),
+          React.createElement("span",{style:{fontSize:12,color:A.blue}},xp%100,"/100 XP")),
+        React.createElement(Bar,{pct:xp%100,color:A.blue,h:7})),
+      React.createElement("h3",{style:{fontSize:14,color:"#888",fontWeight:500,margin:"0 0 12px"}},"Quick start"),
+      React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:24}},
+        React.createElement("div",{onClick:()=>setPage("modules"),style:{background:dim(A.blue),border:`1px solid ${A.blue}33`,borderRadius:12,padding:18,cursor:"pointer"}},
+          React.createElement("div",{style:{fontSize:13,fontWeight:600,color:A.blue,marginBottom:4}},"Continue learning"),
+          React.createElement("div",{style:{fontSize:12,color:"#888"}},totalDone,"/",totalLessons," lessons completed")),
+        React.createElement("div",{onClick:()=>setPage("playground"),style:{background:dim(A.green),border:`1px solid ${A.green}33`,borderRadius:12,padding:18,cursor:"pointer"}},
+          React.createElement("div",{style:{fontSize:13,fontWeight:600,color:A.green,marginBottom:4}},"Practice session"),
+          React.createElement("div",{style:{fontSize:12,color:"#888"}},PG_CHALLENGES.length," challenges across 4 categories"))),
+      React.createElement("h3",{style:{fontSize:14,color:"#888",fontWeight:500,margin:"0 0 10px"}},"Your modules"),
+      MODULES_DATA.map(m=>{const done=m.lessons.filter(l=>progress[l.id]?.completed).length;
+        return React.createElement("div",{key:m.id,onClick:()=>goModule(m),style:{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",borderRadius:10,marginBottom:6,background:"rgba(255,255,255,0.02)",border:"1px solid rgba(255,255,255,0.05)",cursor:"pointer"}},
+          React.createElement("div",{style:{width:32,height:32,borderRadius:8,background:dim(m.color),display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:m.color,fontFamily:"monospace"}},m.icon),
+          React.createElement("div",{style:{flex:1}},React.createElement("div",{style:{fontSize:13,color:"#ddd",fontWeight:500}},m.title),React.createElement("div",{style:{fontSize:11,color:"#555"}},done,"/",m.lessons.length)),
+          React.createElement("div",{style:{width:60}},React.createElement(Bar,{pct:(done/m.lessons.length)*100,color:m.color})));}));
+  };
+
+  return React.createElement("div",{style:{display:"flex",minHeight:"100vh",background:"#0a0a0b",color:"#e5e5e5",fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"}},
+    React.createElement("div",{style:{width:200,background:"rgba(255,255,255,0.02)",borderRight:"1px solid rgba(255,255,255,0.06)",padding:"20px 10px",flexShrink:0,display:"flex",flexDirection:"column"}},
+      React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,padding:"0 8px",marginBottom:28}},
+        React.createElement("div",{style:{width:30,height:30,borderRadius:8,background:dim(A.blue),display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:700,color:A.blue}},"D"),
+        React.createElement("div",null,React.createElement("div",{style:{fontSize:14,fontWeight:700,color:"#fff",letterSpacing:2}},"DEVOS"),React.createElement("div",{style:{fontSize:8,color:"#555",letterSpacing:1.5}},"LEARNING OS"))),
+      React.createElement("nav",{style:{flex:1}},NAV.map(n=>{
+        const active=page===n.id||(n.id==="modules"&&(page==="module"||page==="lesson"));
+        return React.createElement("button",{key:n.id,onClick:()=>{setPage(n.id);setActiveModule(null);setActiveLesson(null);setPgActive(false);setPgSummary(null);},style:{width:"100%",display:"flex",alignItems:"center",gap:8,padding:"9px 10px",borderRadius:8,border:"none",background:active?dim(A.blue):"transparent",color:active?A.blue:"#666",fontSize:13,fontWeight:active?500:400,cursor:"pointer",marginBottom:2,textAlign:"left"}},
+          React.createElement("span",{style:{fontSize:14,width:18,textAlign:"center"}},n.icon),n.label);})),
+      React.createElement("div",{style:{padding:"10px 8px",borderTop:"1px solid rgba(255,255,255,0.06)",fontSize:11,color:"#555"}},"Level ",level," \u00B7 ",xp," XP")),
+    React.createElement("div",{style:{flex:1,padding:"24px 28px",overflowY:"auto",maxHeight:"100vh"}},
+      React.createElement("div",{style:{maxWidth:780,margin:"0 auto"}},renderContent())));
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
+</script>
+</body>
+</html>
